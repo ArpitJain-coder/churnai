@@ -5,7 +5,9 @@ import pickle
 import joblib
 import os
 from fastapi.middleware.cors import CORSMiddleware
-import xgboost as xgb
+from supabase import create_client, Client
+import datetime
+import sqlite3
 
 app = FastAPI()
 
@@ -29,6 +31,40 @@ except Exception:
     # Try current dir just in case
     model = pickle.load(open('churn_model.pkl', 'rb'))
     scaler = joblib.load('scaler (1).pkl')
+
+# Initialize Supabase Client
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+supabase: Client | None = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"Failed to initialize Supabase: {e}")
+
+# Fallback to Local SQLite if Supabase is not available
+LOCAL_DB_PATH = os.path.join(base_dir, 'local_history.db')
+if not supabase:
+    try:
+        conn = sqlite3.connect(LOCAL_DB_PATH)
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS churn_predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                gender TEXT,
+                tenure INTEGER,
+                monthly_charges REAL,
+                contract TEXT,
+                prediction_result TEXT,
+                churn_probability REAL,
+                created_at TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Failed to initialize SQLite: {e}")
 
 class CustomerData(BaseModel):
     gender: str
@@ -110,11 +146,132 @@ async def predict(data: CustomerData):
 
         prediction = int(model.predict(df)[0])
         probability = float(model.predict_proba(df)[0][1])
-
-        return {
+        
+        result_payload = {
             "prediction": prediction,
             "probability": probability,
             "status": "success"
         }
+
+        # Log to Supabase or SQLite
+        db_payload = {
+            "gender": data.gender,
+            "tenure": data.tenure,
+            "monthly_charges": data.MonthlyCharges,
+            "contract": data.Contract,
+            "prediction_result": "Churn" if prediction == 1 else "Stay",
+            "churn_probability": probability,
+            "created_at": datetime.datetime.utcnow().isoformat()
+        }
+
+        if supabase:
+            try:
+                supabase.table("churn_predictions").insert(db_payload).execute()
+            except Exception as e:
+                print(f"Supabase logging failed: {e}")
+        else:
+            try:
+                conn = sqlite3.connect(LOCAL_DB_PATH)
+                c = conn.cursor()
+                c.execute('''
+                    INSERT INTO churn_predictions (gender, tenure, monthly_charges, contract, prediction_result, churn_probability, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (db_payload["gender"], db_payload["tenure"], db_payload["monthly_charges"], db_payload["contract"], db_payload["prediction_result"], db_payload["churn_probability"], db_payload["created_at"]))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"SQLite logging failed: {e}")
+
+        return result_payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/history")
+async def get_history():
+    if supabase:
+        try:
+            response = supabase.table("churn_predictions").select("*").order("created_at", desc=True).limit(5).execute()
+            return {"data": response.data, "message": "success", "source": "supabase"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        try:
+            conn = sqlite3.connect(LOCAL_DB_PATH)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute('SELECT * FROM churn_predictions ORDER BY created_at DESC LIMIT 5')
+            rows = c.fetchall()
+            conn.close()
+            data = [dict(ix) for ix in rows]
+            return {"data": data, "message": "success", "source": "sqlite"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/features")
+async def get_features():
+    try:
+        if hasattr(model, 'feature_importances_'):
+            importances = model.feature_importances_
+            feature_impacts = [{"feature": f.replace('_', ' ').title(), "impact": float(imp)} for f, imp in zip(FEATURE_NAMES, importances)]
+            feature_impacts.sort(key=lambda x: x["impact"], reverse=True)
+            return {"data": feature_impacts[:8], "message": "success"}
+        return {"data": [], "message": "Model has no feature importances"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/stats")
+async def get_stats():
+    try:
+        if supabase:
+            res = supabase.table("churn_predictions").select("*").execute()
+            data = res.data
+        else:
+            conn = sqlite3.connect(LOCAL_DB_PATH)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute('SELECT * FROM churn_predictions')
+            rows = c.fetchall()
+            conn.close()
+            data = [dict(ix) for ix in rows]
+
+        if not data:
+            return {
+                "churn_rate": "0.0%",
+                "active_customers": "0",
+                "avg_ltv": "$0",
+                "history": [],
+                "source": "supabase" if supabase else "sqlite"
+            }
+        
+        total = len(data)
+        churns = sum(1 for d in data if d.get('prediction_result') == 'Churn')
+        churn_rate = (churns / total) * 100
+        
+        total_ltv = sum(float(d.get('monthly_charges', 0)) * int(d.get('tenure', 0)) for d in data)
+        avg_ltv = total_ltv / total
+        
+        # Calculate monthly history for charts
+        history_data = []
+        for d in data[-20:]: # last 20 for chart
+             history_data.append({
+                 "date": d.get('created_at', '')[:10],
+                 "prob": d.get('churn_probability', 0),
+                 "result": d.get('prediction_result', '')
+             })
+
+        return {
+            "churn_rate": f"{churn_rate:.1f}%",
+            "active_customers": f"{total}",
+            "avg_ltv": f"${avg_ltv:,.0f}",
+            "history": history_data,
+            "source": "supabase" if supabase else "sqlite"
+        }
+    except Exception as e:
+        print("Stats error:", e)
+        return {
+            "churn_rate": "0.0%",
+            "active_customers": "0",
+            "avg_ltv": "$0",
+            "history": [],
+            "source": "error"
+        }

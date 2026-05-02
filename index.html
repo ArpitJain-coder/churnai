@@ -3,440 +3,724 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Churn Predictor | Premium Intelligence</title>
+    <title>Telecom Churn Prediction AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.5);
-            --secondary: #ec4899;
-            --bg-dark: #0f111a;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --bg-body: #09090b;
+            --bg-sidebar: #050505;
+            --bg-card: #18181b;
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text-muted: #a1a1aa;
+            --border-light: #27272a;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #06b6d4;
+            --accent-hover: #7c3aed;
+            --danger: #f43f5e;
+            --danger-bg: rgba(244, 63, 94, 0.15);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Outfit', sans-serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+        body { display: flex; height: 100vh; background-color: var(--bg-body); color: var(--text-main); overflow: hidden; font-size: 15px; }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px; background-color: var(--bg-sidebar); color: #f8fafc; display: flex; flex-direction: column;
+            padding: 2rem 1.5rem; z-index: 20; border-right: 1px solid var(--border-light); transition: all 0.3s ease;
         }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow-x: hidden;
-            position: relative;
-            padding: 2rem;
+        .logo-area { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 800; margin-bottom: 3.5rem; letter-spacing: -0.2px; color: white; }
+        .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary)); border-radius: 12px; display: grid; place-items: center; color: white; box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4); }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 14px; padding: 0.875rem 1.25rem; color: #a1a1aa; text-decoration: none;
+            border-radius: 12px; font-weight: 500; font-size: 1rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 0.5rem; cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover { background-color: #18181b; color: white; transform: translateX(6px); border-color: var(--border-light); box-shadow: var(--shadow-glow); }
+        .nav-link svg { stroke-width: 2.2px; transition: color 0.3s; }
+        .nav-link.active svg { color: var(--accent-secondary); }
+
+        /* Main Workspace */
+        .main-workspace { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        
+        /* Futuristic Background Mesh */
+        .main-workspace::before {
+            content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(9,9,11,0) 70%); z-index: -1; border-radius: 50%;
+        }
+        .main-workspace::after {
+            content: ''; position: absolute; bottom: -200px; left: -200px; width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(9,9,11,0) 70%); z-index: -1; border-radius: 50%;
         }
 
-        /* Animated Background */
-        .bg-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            overflow: hidden;
-            background: radial-gradient(circle at top left, #1a1c29, #0f111a);
-        }
+        .header { padding: 3rem 3rem 2rem; display: flex; justify-content: space-between; align-items: flex-end; z-index: 10; }
+        .header-content h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; color: var(--text-main); margin-bottom: 0.25rem; background: linear-gradient(to right, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-content p { color: var(--text-muted); font-size: 1.05rem; font-weight: 400; }
 
-        .shape {
-            position: absolute;
-            filter: blur(80px);
-            opacity: 0.5;
-            animation: float 20s infinite ease-in-out alternate;
-        }
+        .user-profile { display: flex; align-items: center; gap: 14px; background: var(--bg-card); padding: 8px 20px 8px 8px; border-radius: 40px; border: 1px solid var(--border-light); cursor: pointer; transition: all 0.3s; }
+        .user-profile:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-glow); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #27272a; object-fit: cover; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-info span { font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+        .user-info small { font-weight: 400; font-size: 0.8rem; color: var(--accent-secondary); }
 
-        .shape-1 {
-            top: -10%;
-            left: -10%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(circle, var(--primary), transparent 70%);
-            animation-delay: 0s;
-        }
+        /* Views */
+        .view-section { display: none; animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: top center; }
+        .view-section.active { display: block; }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.98) translateY(15px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-        .shape-2 {
-            bottom: -20%;
-            right: -10%;
-            width: 60vw;
-            height: 60vw;
-            background: radial-gradient(circle, var(--secondary), transparent 70%);
-            animation-delay: -5s;
-        }
+        /* Content Layout */
+        .dashboard-content { padding: 0 3rem 3rem; display: grid; grid-template-columns: 1.6fr 1fr; gap: 2rem; max-width: 1800px; width: 100%; }
+        .full-width-content { grid-template-columns: 1fr; }
 
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(5%, 10%) scale(1.1); }
-            100% { transform: translate(-5%, -5%) scale(0.9); }
-        }
+        /* KPI Row */
+        .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card { background: rgba(24,24,27,0.6); backdrop-filter: blur(12px); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.75rem; position: relative; overflow: hidden; transition: all 0.3s; }
+        .kpi-card:hover { border-color: rgba(139, 92, 246, 0.5); transform: translateY(-4px); box-shadow: var(--shadow-glow); }
+        .kpi-icon { position: absolute; right: -15px; top: -15px; opacity: 0.03; font-size: 110px; color: white; }
+        .kpi-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
+        .kpi-value { font-size: 2.2rem; font-weight: 800; color: var(--text-main); line-height: 1; margin-bottom: 0.5rem; }
+        .kpi-trend { font-size: 0.85rem; color: var(--accent-secondary); font-weight: 500; display: flex; align-items: center; gap: 6px;}
 
-        /* Glassmorphism Container */
-        .container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 3rem;
-            width: 100%;
-            max-width: 900px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-            transform: translateY(30px);
-        }
+        /* Cards */
+        .card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 2.25rem; border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 2rem; }
+        .card-header { font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); letter-spacing: -0.3px; }
+        .db-badge { font-size: 0.75rem; background: rgba(6,182,212,0.1); color: var(--accent-secondary); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(6,182,212,0.2); font-weight: 600;}
 
-        @keyframes slideUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        /* Form Styling */
+        form { display: flex; flex-direction: column; gap: 2rem; }
+        .form-section { background: rgba(9,9,11,0.5); border-radius: 14px; padding: 1.75rem; border: 1px solid #27272a; }
+        .form-section-title { font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px; }
+        .form-section-title svg { color: var(--accent-primary); width: 20px; height: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.6rem; }
+        label { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
+        select, input { padding: 0.85rem 1.2rem; border-radius: 10px; border: 1px solid #3f3f46; background: #09090b; font-size: 0.95rem; font-weight: 500; color: var(--text-main); transition: all 0.3s; outline: none; -webkit-appearance: none; }
+        select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1.2rem center; background-size: 1.2rem; padding-right: 3rem; }
+        select:focus, input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15); background: #18181b; }
 
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
+        /* Neon Predict Button */
+        .btn-predict { width: 100%; background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary)); color: white; border: none; padding: 1.25rem; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4); position: relative; overflow: hidden; letter-spacing: 0.5px; }
+        .btn-predict::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.6s; }
+        .btn-predict:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(139, 92, 246, 0.6); }
+        .btn-predict:hover::after { left: 150%; }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #fff, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .loader { display: none; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        p.subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
+        /* Glassmorphism Results */
+        .result-panel { position: sticky; top: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+        .glass-card { background: rgba(39, 39, 42, 0.3); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 4px solid #3f3f46; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .result-content { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2.5rem 0 1.5rem; }
+        .result-prob { font-size: 5.5rem; font-weight: 800; letter-spacing: -3px; line-height: 1; margin-bottom: 1.5rem; transition: color 0.5s; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .result-status { font-size: 1.2rem; font-weight: 600; padding: 10px 28px; border-radius: 40px; transition: all 0.5s; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Form Layout */
-        form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
+        .status-idle .result-prob { color: #52525b; }
+        .status-idle .result-status { color: #a1a1aa; background: #27272a; }
+        .status-danger { border-top-color: var(--danger); background: linear-gradient(180deg, rgba(244,63,94,0.05) 0%, rgba(24,24,27,0.8) 100%); box-shadow: 0 0 40px rgba(244,63,94,0.1); }
+        .status-danger .result-prob { color: var(--danger); text-shadow: 0 0 30px rgba(244,63,94,0.4); }
+        .status-danger .result-status { color: var(--danger); background: var(--danger-bg); border: 1px solid rgba(244,63,94,0.3); }
+        .status-safe { border-top-color: var(--success); background: linear-gradient(180deg, rgba(16,185,129,0.05) 0%, rgba(24,24,27,0.8) 100%); box-shadow: 0 0 40px rgba(16,185,129,0.1); }
+        .status-safe .result-prob { color: var(--success); text-shadow: 0 0 30px rgba(16,185,129,0.4); }
+        .status-safe .result-status { color: var(--success); background: var(--success-bg); border: 1px solid rgba(16,185,129,0.3); }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+        /* Dark Theme Tables */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        th { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 10px; text-align: left; border-bottom: 1px solid var(--border-light); }
+        td { background: #09090b; padding: 14px 20px; font-size: 0.95rem; border-top: 1px solid #27272a; border-bottom: 1px solid #27272a; }
+        td:first-child { border-left: 1px solid #27272a; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        td:last-child { border-right: 1px solid #27272a; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        tr { transition: transform 0.2s; cursor: default; }
+        tr:hover td { background: #18181b; border-color: #3f3f46; }
 
-        .form-group.full-width {
-            grid-column: 1 / -1;
-        }
+        /* Dark Toast */
+        .toast { position: fixed; bottom: 30px; right: 30px; background: #18181b; border: 1px solid #27272a; border-left: 4px solid var(--accent-primary); padding: 16px 24px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 14px; z-index: 100; transform: translateX(120%); transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .toast.show { transform: translateX(0); }
+        .toast svg { width: 26px; height: 26px; color: var(--accent-primary); }
+        .toast-content { display: flex; flex-direction: column; }
+        .toast-title { font-weight: 700; font-size: 1rem; color: var(--text-main); }
+        .toast-msg { font-size: 0.9rem; color: var(--text-muted); }
 
-        label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #cbd5e1;
-            letter-spacing: 0.5px;
-        }
+        .chart-container { position: relative; height: 240px; width: 100%; }
+        .chart-container-large { position: relative; height: 450px; width: 100%; }
 
-        select, input {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s ease;
-            font-family: 'Outfit', sans-serif;
-            appearance: none;
-        }
-
-        select {
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-        }
-
-        select option {
-            background: var(--bg-dark);
-            color: white;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        .section-title {
-            grid-column: 1 / -1;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #fff;
-            margin-top: 1rem;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 0.5rem;
-        }
-
-        /* Submit Button */
-        .submit-btn {
-            grid-column: 1 / -1;
-            background: linear-gradient(135deg, var(--primary), #818cf8);
-            color: white;
-            border: none;
-            padding: 1.2rem;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-            box-shadow: 0 10px 20px -10px var(--primary);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 25px -10px var(--primary);
-            background: linear-gradient(135deg, #4f46e5, #6366f1);
-        }
-
-        .submit-btn:active {
-            transform: translateY(1px);
-        }
-
-        /* Result Modal */
-        #result-container {
-            display: none;
-            grid-column: 1 / -1;
-            margin-top: 2rem;
-            padding: 2rem;
-            border-radius: 16px;
-            text-align: center;
-            animation: fadeIn 0.5s ease forwards;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .result-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .result-prob {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff, #cbd5e1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-churn { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-        .status-stay { color: #10b981; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); }
-
-        /* Loader */
-        .loader {
-            display: none;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container { padding: 2rem 1.5rem; }
-            h1 { font-size: 2rem; }
-        }
+        @media (max-width: 1200px) { .dashboard-content { grid-template-columns: 1fr; } .result-panel { position: static; } }
     </style>
 </head>
 <body>
 
-    <div class="bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+            </div>
+            Telecom Churn AI
+        </div>
+        <div class="nav-link active" data-target="dashboard">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect></svg>
+            Predictive Dashboard
+        </div>
+        <div class="nav-link" data-target="analytics">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Risk Analytics
+        </div>
+        <div class="nav-link" data-target="customers">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            Customer Base
+        </div>
+        <div class="nav-link" data-target="settings" style="margin-top: auto;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            System Settings
+        </div>
     </div>
 
-    <div class="container">
-        <header>
-            <h1>AI Churn Predictor</h1>
-            <p class="subtitle">Predict customer retention with intelligent machine learning.</p>
-        </header>
+    <!-- Main Workspace -->
+    <div class="main-workspace">
+        <div class="header">
+            <div class="header-content">
+                <h1 id="page-title">Intelligence Hub</h1>
+                <p id="page-subtitle">AI-driven retention insights and proactive risk management.</p>
+            </div>
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=Executive+User&background=8b5cf6&color=fff" alt="User" class="avatar">
+                <div class="user-info">
+                    <span>Executive User</span>
+                    <small>Admin Portal</small>
+                </div>
+            </div>
+        </div>
 
-        <form id="predict-form">
-            <div class="section-title">Demographics</div>
-            <div class="form-group">
-                <label>Gender</label>
-                <select name="gender"><option>Female</option><option>Male</option></select>
-            </div>
-            <div class="form-group">
-                <label>Senior Citizen</label>
-                <select name="SeniorCitizen"><option>No</option><option>Yes</option></select>
-            </div>
-            <div class="form-group">
-                <label>Partner</label>
-                <select name="Partner"><option>No</option><option>Yes</option></select>
-            </div>
-            <div class="form-group">
-                <label>Dependents</label>
-                <select name="Dependents"><option>No</option><option>Yes</option></select>
-            </div>
+        <!-- View: Dashboard -->
+        <div id="view-dashboard" class="view-section active">
+            <div class="dashboard-content">
+                <!-- Left Side: Data Input & KPI -->
+                <div class="input-section">
+                    <!-- KPI Row -->
+                    <div class="kpi-row">
+                        <div class="kpi-card">
+                            <div class="kpi-icon">📉</div>
+                            <div class="kpi-title">Global Churn Rate</div>
+                            <div class="kpi-value" id="kpi-churn">--%</div>
+                            <div class="kpi-trend"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Live Metrics</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon">👥</div>
+                            <div class="kpi-title">Analyzed Profiles</div>
+                            <div class="kpi-value" id="kpi-total">--</div>
+                            <div class="kpi-trend"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Active Database</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon">💰</div>
+                            <div class="kpi-title">Avg. Est. LTV</div>
+                            <div class="kpi-value" id="kpi-ltv">--</div>
+                            <div class="kpi-trend"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Revenue Risk</div>
+                        </div>
+                    </div>
 
-            <div class="section-title">Services</div>
-            <div class="form-group">
-                <label>Phone Service</label>
-                <select name="PhoneService"><option>No</option><option>Yes</option></select>
-            </div>
-            <div class="form-group">
-                <label>Multiple Lines</label>
-                <select name="MultipleLines"><option>No</option><option>Yes</option><option>No phone service</option></select>
-            </div>
-            <div class="form-group">
-                <label>Internet Service</label>
-                <select name="InternetService" onchange="updateInternetOptions(this.value)"><option>DSL</option><option>Fiber optic</option><option>No</option></select>
-            </div>
-            
-            <!-- Dynamic Internet Services -->
-            <div class="form-group"><label>Online Security</label><select name="OnlineSecurity" class="int-dep"><option>No</option><option>Yes</option></select></div>
-            <div class="form-group"><label>Online Backup</label><select name="OnlineBackup" class="int-dep"><option>No</option><option>Yes</option></select></div>
-            <div class="form-group"><label>Device Protection</label><select name="DeviceProtection" class="int-dep"><option>No</option><option>Yes</option></select></div>
-            <div class="form-group"><label>Tech Support</label><select name="TechSupport" class="int-dep"><option>No</option><option>Yes</option></select></div>
-            <div class="form-group"><label>Streaming TV</label><select name="StreamingTV" class="int-dep"><option>No</option><option>Yes</option></select></div>
-            <div class="form-group"><label>Streaming Movies</label><select name="StreamingMovies" class="int-dep"><option>No</option><option>Yes</option></select></div>
+                    <div class="card">
+                        <div class="card-header">
+                            Customer Profiling Engine
+                            <span id="db-indicator" class="db-badge">Connecting...</span>
+                        </div>
+                        <form id="predict-form">
+                            
+                            <div class="form-section">
+                                <div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Personal Demographics</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Gender</label><select name="gender"><option>Female</option><option>Male</option></select></div>
+                                    <div class="form-group"><label>Senior Citizen</label><select name="SeniorCitizen"><option>No</option><option>Yes</option></select></div>
+                                    <div class="form-group"><label>Partner</label><select name="Partner"><option>No</option><option>Yes</option></select></div>
+                                    <div class="form-group"><label>Dependents</label><select name="Dependents"><option>No</option><option>Yes</option></select></div>
+                                </div>
+                            </div>
 
-            <div class="section-title">Account Info</div>
-            <div class="form-group">
-                <label>Contract</label>
-                <select name="Contract"><option>Month-to-month</option><option>One year</option><option>Two year</option></select>
-            </div>
-            <div class="form-group">
-                <label>Paperless Billing</label>
-                <select name="PaperlessBilling"><option>No</option><option>Yes</option></select>
-            </div>
-            <div class="form-group">
-                <label>Payment Method</label>
-                <select name="PaymentMethod">
-                    <option>Bank transfer (automatic)</option>
-                    <option>Credit card (automatic)</option>
-                    <option>Electronic check</option>
-                    <option>Mailed check</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Tenure (months)</label>
-                <input type="number" name="tenure" value="1" min="0" required>
-            </div>
-            <div class="form-group">
-                <label>Monthly Charges ($)</label>
-                <input type="number" name="MonthlyCharges" step="0.01" value="50.0" required>
-            </div>
-            <div class="form-group">
-                <label>Total Charges ($)</label>
-                <input type="number" name="TotalCharges" step="0.01" value="50.0" required>
-            </div>
+                            <div class="form-section">
+                                <div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> Services & Connectivity</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Internet Service</label><select name="InternetService" onchange="updateInternetOptions(this.value)"><option>Fiber optic</option><option>DSL</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Phone Service</label><select name="PhoneService"><option>Yes</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Multiple Lines</label><select name="MultipleLines"><option>Yes</option><option>No</option><option>No phone service</option></select></div>
+                                    <div class="form-group"><label>Online Security</label><select name="OnlineSecurity" class="int-dep"><option>No</option><option>Yes</option></select></div>
+                                    <div class="form-group"><label>Online Backup</label><select name="OnlineBackup" class="int-dep"><option>Yes</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Device Protection</label><select name="DeviceProtection" class="int-dep"><option>Yes</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Tech Support</label><select name="TechSupport" class="int-dep"><option>No</option><option>Yes</option></select></div>
+                                    <div class="form-group"><label>Streaming TV</label><select name="StreamingTV" class="int-dep"><option>Yes</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Streaming Movies</label><select name="StreamingMovies" class="int-dep"><option>Yes</option><option>No</option></select></div>
+                                </div>
+                            </div>
 
-            <button type="submit" class="submit-btn">
-                <span id="btn-text">Predict Churn Risk</span>
-                <div class="loader" id="btn-loader"></div>
-            </button>
+                            <div class="form-section">
+                                <div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg> Billing & Financials</div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label>Contract Length</label><select name="Contract"><option>Month-to-month</option><option>One year</option><option>Two year</option></select></div>
+                                    <div class="form-group">
+                                        <label>Payment Method</label>
+                                        <select name="PaymentMethod">
+                                            <option>Electronic check</option>
+                                            <option>Bank transfer (automatic)</option>
+                                            <option>Credit card (automatic)</option>
+                                            <option>Mailed check</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label>Paperless Billing</label><select name="PaperlessBilling"><option>Yes</option><option>No</option></select></div>
+                                    <div class="form-group"><label>Tenure (Months)</label><input type="number" name="tenure" value="12" min="0" required></div>
+                                    <div class="form-group"><label>Monthly Charges ($)</label><input type="number" name="MonthlyCharges" step="0.01" value="85.50" required></div>
+                                    <div class="form-group"><label>Total Charges ($)</label><input type="number" name="TotalCharges" step="0.01" value="1026.00" required></div>
+                                </div>
+                            </div>
 
-            <div id="result-container">
-                <div class="result-title" id="result-title">Analyzing...</div>
-                <div class="result-prob" id="result-prob"></div>
+                            <button type="submit" class="btn-predict">
+                                <span id="btn-text">Execute Neural Prediction</span>
+                                <div class="loader" id="btn-loader"></div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Side: Analytics Panel -->
+                <div class="result-panel">
+                    <div class="card glass-card status-idle" id="result-box">
+                        <div class="card-header">Real-Time Assessment</div>
+                        <div class="result-content">
+                            <div class="result-prob" id="result-prob">--%</div>
+                            <div class="result-status" id="result-title">Awaiting Execution</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card" id="retention-card" style="display: none; border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 10px 40px rgba(6, 182, 212, 0.1); padding: 1.75rem;">
+                        <div class="card-header" style="font-size: 1.1rem; margin-bottom: 1rem;">
+                            <!-- Icon and title injected via JS -->
+                        </div>
+                        <div id="retention-strategy" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.6;"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">Recent Probability Trend</div>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Recent Activity Log</div>
+                        <div id="history-container">
+                            <p id="history-loading" style="color: var(--text-muted);">Syncing secure logs...</p>
+                            <table id="history-table" style="display: none;">
+                                <thead>
+                                    <tr><th>Profile Data</th><th>Risk Assessment</th></tr>
+                                </thead>
+                                <tbody id="history-body"></tbody>
+                            </table>
+                            <p id="history-empty" style="display: none; font-style: italic; color: var(--text-muted); margin-top: 1rem;">No recent predictions found.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
+
+        <!-- View: Analytics -->
+        <div id="view-analytics" class="view-section">
+            <div class="dashboard-content">
+                <div class="card" style="grid-column: span 2;">
+                    <div class="card-header">Comprehensive Risk Analysis</div>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem;">This chart tracks the exact churn probability of the last processed customer profiles, providing a clear visual representation of risk volatility over time.</p>
+                    <div class="chart-container-large">
+                        <canvas id="largeTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card" style="grid-column: span 2;">
+                    <div class="card-header">Machine Learning Feature Impact</div>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem;">Discover which data points are driving the neural engine's predictions. The higher the impact, the more it influences churn risk.</p>
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="featureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Customers -->
+        <div id="view-customers" class="view-section">
+            <div class="dashboard-content full-width-content">
+                <div class="card">
+                    <div class="card-header">
+                        Global Customer Database
+                        <button onclick="exportTableToCSV('customer_database.csv')" style="background: var(--bg-body); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                    <table id="full-customers-table">
+                        <thead>
+                            <tr>
+                                <th>Date Processed</th>
+                                <th>Gender</th>
+                                <th>Tenure / Contract</th>
+                                <th>Financials</th>
+                                <th>Probability</th>
+                                <th>Final Decision</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-customers-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Settings -->
+        <div id="view-settings" class="view-section">
+            <div class="dashboard-content full-width-content">
+                <div class="card" style="max-width: 600px; margin: 0 auto; border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 10px 40px rgba(139, 92, 246, 0.1);">
+                    <div class="card-header">System Infrastructure Configuration</div>
+                    <div style="background: #09090b; padding: 1.5rem; border-radius: 12px; border: 1px solid #27272a; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 0.75rem; color: var(--text-main);">Current Database Engine</h3>
+                        <p style="font-size: 1rem; color: var(--text-muted); display: flex; align-items: center; gap: 10px;">
+                            Status: <span id="settings-db-status" style="font-weight: 700; color: var(--success); text-shadow: 0 0 10px rgba(16,185,129,0.5);">Connected</span>
+                            <span id="settings-db-source-badge" class="db-badge">Loading...</span>
+                        </p>
+                    </div>
+                    <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.7;">
+                        Telecom Churn Prediction AI is currently configured to automatically switch between a cloud PostgreSQL database via Supabase and a localized SQLite instance. 
+                        <br><br>
+                        To link a production Supabase project, you must set the <code style="background:#27272a; padding: 2px 6px; border-radius: 6px; color: var(--accent-primary);">SUPABASE_URL</code> and <code style="background:#27272a; padding: 2px 6px; border-radius: 6px; color: var(--accent-primary);">SUPABASE_KEY</code> environment variables on the backend Python server (`api/index.py`) before startup.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div class="toast-content"><span class="toast-title">Analysis Complete</span><span class="toast-msg">Prediction stored successfully.</span></div>
     </div>
 
     <script>
+        let trendChartInstance = null;
+        let largeTrendChartInstance = null;
+        let featureChartInstance = null;
+        let globalStatsData = null;
+
+        Chart.defaults.color = '#a1a1aa';
+        Chart.defaults.font.family = 'Outfit';
+
+        // View Navigation Logic
+        const navLinks = document.querySelectorAll('.nav-link');
+        const views = document.querySelectorAll('.view-section');
+        const pageTitle = document.getElementById('page-title');
+        const pageSubtitle = document.getElementById('page-subtitle');
+
+        const viewMeta = {
+            'dashboard': { title: 'Intelligence Hub', subtitle: 'AI-driven retention insights and proactive risk management.' },
+            'analytics': { title: 'Risk Analytics', subtitle: 'Deep dive into probability trends and risk volatility.' },
+            'customers': { title: 'Customer Base', subtitle: 'Comprehensive history of analyzed profiles and model decisions.' },
+            'settings': { title: 'System Settings', subtitle: 'Configure infrastructure and application variables.' }
+        };
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                
+                const targetId = link.getAttribute('data-target');
+                
+                views.forEach(view => {
+                    view.classList.remove('active');
+                    if (view.id === 'view-' + targetId) {
+                        view.classList.add('active');
+                    }
+                });
+
+                pageTitle.innerText = viewMeta[targetId].title;
+                pageSubtitle.innerText = viewMeta[targetId].subtitle;
+
+                if(targetId === 'analytics' && globalStatsData) { initLargeChart(globalStatsData.history); fetchFeatures(); }
+                if(targetId === 'customers' && globalStatsData) { renderFullCustomerTable(); }
+            });
+        });
+
         function updateInternetOptions(val) {
             const selects = document.querySelectorAll('.int-dep');
             selects.forEach(select => {
-                if(val === 'No') {
-                    select.innerHTML = '<option>No internet service</option>';
-                } else {
-                    select.innerHTML = '<option>No</option><option>Yes</option>';
-                }
+                if(val === 'No') { select.innerHTML = '<option>No internet service</option>'; } 
+                else { select.innerHTML = '<option>Yes</option><option>No</option>'; }
             });
         }
 
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastTitle = toast.querySelector('.toast-title');
+            const toastMsg = toast.querySelector('.toast-msg');
+            const toastIcon = toast.querySelector('svg');
+            toastMsg.innerText = msg;
+            if (isError) {
+                toast.style.borderLeftColor = 'var(--danger)';
+                toastTitle.innerText = "Execution Error";
+                toastIcon.style.color = 'var(--danger)';
+                toastIcon.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
+            } else {
+                toast.style.borderLeftColor = 'var(--accent-primary)';
+                toastTitle.innerText = "Analysis Complete";
+                toastIcon.style.color = 'var(--accent-primary)';
+                toastIcon.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>';
+            }
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function buildChartConfig(labels, data, showAxes = false) {
+            return {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Churn Risk (%)', data: data, borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#09090b', pointBorderColor: '#06b6d4', pointRadius: showAxes?5:0, pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#18181b', titleFont: { family: 'Outfit', size: 14 }, bodyFont: { family: 'Outfit', size: 16, weight: 'bold' }, padding: 14, displayColors: false, borderColor: '#27272a', borderWidth: 1, callbacks: { label: (ctx) => `${ctx.raw}% Risk` } }
+                    },
+                    scales: {
+                        x: { display: showAxes, grid: { display: false }, ticks: { font: { family: 'Outfit', size: 13 }, color: '#a1a1aa' } },
+                        y: { display: showAxes, beginAtZero: true, max: 100, grid: { color: '#27272a', borderDash: [5, 5] }, ticks: { font: { family: 'Outfit', size: 13 }, color: '#a1a1aa', stepSize: 25 } }
+                    }
+                }
+            };
+        }
+
+        function initChart(historyData) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if(trendChartInstance) trendChartInstance.destroy();
+            if(!historyData || historyData.length === 0) return;
+            const labels = historyData.map((d, i) => `T-${historyData.length - i}`);
+            const data = historyData.map(d => (d.prob * 100).toFixed(1));
+            trendChartInstance = new Chart(ctx, buildChartConfig(labels, data, false));
+        }
+
+        function initLargeChart(historyData) {
+            const ctx = document.getElementById('largeTrendChart').getContext('2d');
+            if(largeTrendChartInstance) largeTrendChartInstance.destroy();
+            if(!historyData || historyData.length === 0) return;
+            const labels = historyData.map((d, i) => d.date);
+            const data = historyData.map(d => (d.prob * 100).toFixed(1));
+            largeTrendChartInstance = new Chart(ctx, buildChartConfig(labels, data, true));
+        }
+
+        async function fetchHistory() {
+            try {
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : '/api/history';
+                const res = await fetch(apiUrl);
+                const result = await res.json();
+                
+                document.getElementById('history-loading').style.display = 'none';
+                if(result.data && result.data.length > 0) {
+                    document.getElementById('history-table').style.display = 'table';
+                    document.getElementById('history-empty').style.display = 'none';
+                    const tbody = document.getElementById('history-body');
+                    tbody.innerHTML = '';
+                    
+                    result.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        const tdUser = document.createElement('td');
+                        tdUser.innerHTML = `<span style="font-weight:700; color:var(--text-main); font-size: 1.05rem;">$${row.monthly_charges}/mo</span><br><span style="font-size: 0.85rem; color:var(--text-muted)">${row.tenure} months | ${row.contract}</span>`;
+                        
+                        const tdRisk = document.createElement('td');
+                        const isChurn = row.prediction_result === 'Churn';
+                        const color = isChurn ? 'var(--danger)' : 'var(--success)';
+                        const bg = isChurn ? 'var(--danger-bg)' : 'var(--success-bg)';
+                        tdRisk.innerHTML = `<span style="display:inline-block; padding: 4px 12px; border-radius:20px; background:${bg}; color: ${color}; font-weight: 700; font-size:0.85rem; border: 1px solid ${color}33;">${row.prediction_result}</span><br><span style="font-size: 0.85rem; color:var(--text-muted); display:inline-block; margin-top:6px; font-weight:500;">${(row.churn_probability * 100).toFixed(1)}% prob.</span>`;
+                        
+                        tr.appendChild(tdUser); tr.appendChild(tdRisk); tbody.appendChild(tr);
+                    });
+                } else {
+                    document.getElementById('history-empty').style.display = 'block';
+                }
+            } catch(e) { console.error("Failed to fetch history", e); document.getElementById('history-loading').style.display = 'none'; document.getElementById('history-empty').style.display = 'block'; }
+        }
+        
+        async function fetchStats() {
+            try {
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/stats' : '/api/stats';
+                const res = await fetch(apiUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    globalStatsData = data;
+                    document.getElementById('kpi-churn').innerText = data.churn_rate;
+                    document.getElementById('kpi-total').innerText = data.active_customers;
+                    document.getElementById('kpi-ltv').innerText = data.avg_ltv;
+                    
+                    const src = data.source === 'supabase' ? 'Supabase DB' : 'Local SQLite DB';
+                    const srcColor = data.source === 'supabase' ? 'var(--success)' : 'var(--accent-secondary)';
+                    const srcBg = data.source === 'supabase' ? 'var(--success-bg)' : 'rgba(6, 182, 212, 0.1)';
+
+                    document.getElementById('db-indicator').innerText = src;
+                    document.getElementById('db-indicator').style.backgroundColor = srcBg;
+                    document.getElementById('db-indicator').style.color = srcColor;
+                    document.getElementById('db-indicator').style.borderColor = `rgba(${data.source === 'supabase' ? '16, 185, 129' : '6, 182, 212'}, 0.3)`;
+
+                    document.getElementById('settings-db-source-badge').innerText = src;
+                    document.getElementById('settings-db-source-badge').style.backgroundColor = srcBg;
+                    document.getElementById('settings-db-source-badge').style.color = srcColor;
+                    document.getElementById('settings-db-source-badge').style.borderColor = `rgba(${data.source === 'supabase' ? '16, 185, 129' : '6, 182, 212'}, 0.3)`;
+
+                    if(data.history) initChart(data.history);
+                }
+            } catch(e) { console.error("Failed to fetch stats", e); }
+        }
+
+        async function renderFullCustomerTable() {
+            try {
+                const historyRes = await fetch(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : '/api/history');
+                const result = await historyRes.json();
+                
+                const tbody = document.getElementById('full-customers-body');
+                tbody.innerHTML = '';
+                if(result.data) {
+                    result.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        const isChurn = row.prediction_result === 'Churn';
+                        
+                        tr.innerHTML = `
+                            <td><span style="font-weight:600; color:var(--text-main)">${new Date(row.created_at).toLocaleString()}</span></td>
+                            <td><span style="color:var(--text-muted); font-weight:500;">${row.gender}</span></td>
+                            <td><span style="font-weight:600;">${row.tenure} mo</span> <span style="color:var(--text-muted)">/ ${row.contract}</span></td>
+                            <td><span style="font-weight:700; color:var(--accent-secondary)">$${row.monthly_charges}/mo</span></td>
+                            <td><span style="font-weight:700; font-size: 1.05rem;">${(row.churn_probability * 100).toFixed(1)}%</span></td>
+                            <td><span style="display:inline-block; padding: 6px 14px; border-radius:20px; background:${isChurn ? 'var(--danger-bg)' : 'var(--success-bg)'}; color: ${isChurn ? 'var(--danger)' : 'var(--success)'}; font-weight: 800; font-size:0.85rem; border: 1px solid ${isChurn ? 'rgba(244,63,94,0.3)' : 'rgba(16,185,129,0.3)'};">${row.prediction_result}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch(e) { console.error("Failed to render full table", e); }
+        }
+        
+        async function fetchFeatures() {
+            try {
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/features' : '/api/features';
+                const res = await fetch(apiUrl);
+                if (res.ok) {
+                    const result = await res.json();
+                    if(result.data && result.data.length > 0) {
+                        const labels = result.data.map(d => d.feature);
+                        const data = result.data.map(d => (d.impact * 100).toFixed(1));
+                        
+                        const ctx = document.getElementById('featureChart').getContext('2d');
+                        if(featureChartInstance) featureChartInstance.destroy();
+                        
+                        featureChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Impact (%)', data: data, backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                                    borderRadius: 6, barThickness: 20, hoverBackgroundColor: '#8b5cf6'
+                                }]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                                plugins: { legend: { display: false }, tooltip: { backgroundColor: '#18181b', titleFont: { family: 'Outfit', size: 14 }, bodyFont: { family: 'Outfit', size: 16, weight: 'bold' }, padding: 14, borderColor: '#27272a', borderWidth: 1 } },
+                                scales: {
+                                    x: { grid: { color: '#27272a', borderDash: [5, 5] }, ticks: { font: { family: 'Outfit', size: 13 }, color: '#a1a1aa' } },
+                                    y: { grid: { display: false }, ticks: { font: { family: 'Outfit', size: 13 }, color: '#f8fafc' } }
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch(e) { console.error("Failed to fetch features", e); }
+        }
+
+        function exportTableToCSV(filename) {
+            let csv = [];
+            const rows = document.querySelectorAll("#full-customers-table tr");
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+                csv.push(row.join(","));
+            }
+            const csvFile = new Blob([csv.join("\\n")], {type: "text/csv"});
+            const downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+        }
+        
+        // Fetch on load
+        fetchHistory();
+        fetchStats();
+
         document.getElementById('predict-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const btnText = document.getElementById('btn-text');
-            const loader = document.getElementById('btn-loader');
-            const resultBox = document.getElementById('result-container');
-            
-            btnText.style.display = 'none';
-            loader.style.display = 'block';
-            resultBox.style.display = 'none';
-            resultBox.className = ''; // Reset classes
+            const btnText = document.getElementById('btn-text'); const loader = document.getElementById('btn-loader'); const resultBox = document.getElementById('result-box');
+            btnText.style.display = 'none'; loader.style.display = 'block'; resultBox.classList.remove('status-idle', 'status-danger', 'status-safe');
 
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Convert types
-            data.tenure = parseInt(data.tenure);
-            data.MonthlyCharges = parseFloat(data.MonthlyCharges);
-            data.TotalCharges = parseFloat(data.TotalCharges);
+            const formData = new FormData(e.target); const data = Object.fromEntries(formData.entries());
+            data.tenure = parseInt(data.tenure); data.MonthlyCharges = parseFloat(data.MonthlyCharges); data.TotalCharges = parseFloat(data.TotalCharges);
 
             try {
-                // Point to current host for API
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                               ? 'http://localhost:8000/api/predict' 
-                               : '/api/predict';
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/predict' : '/api/predict';
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if(!response.ok) throw new Error("Network response was not ok");
                 
                 const result = await response.json();
+                const isChurn = result.prediction === 1; const probPercent = (result.probability * 100).toFixed(1) + '%';
+                document.getElementById('result-title').innerText = isChurn ? "High Churn Risk Detected" : "Customer Retention Likely"; document.getElementById('result-prob').innerText = probPercent;
+                resultBox.classList.add(isChurn ? 'status-danger' : 'status-safe');
                 
-                const isChurn = result.prediction === 1;
-                const probPercent = (result.probability * 100).toFixed(1) + '%';
-
-                document.getElementById('result-title').innerText = isChurn ? "High Risk of Churn" : "Customer Likely to Stay";
-                document.getElementById('result-title').style.color = isChurn ? "#ef4444" : "#10b981";
-                document.getElementById('result-prob').innerText = probPercent + " Probability";
+                // Dynamic Retention Strategy
+                let strategyHtml = "";
+                const rCard = document.getElementById('retention-card');
+                const rHeader = rCard.querySelector('.card-header');
                 
-                resultBox.classList.add(isChurn ? 'status-churn' : 'status-stay');
-                resultBox.style.display = 'block';
+                if (isChurn) {
+                    let reasons = [];
+                    if (data.Contract === 'Month-to-month') reasons.push("<li style='margin-bottom:8px;'><strong style='color:var(--text-main);'>Contract Risk:</strong> Month-to-Month status is high flight risk. Offer a 10% discount to lock them into a 1-Year plan.</li>");
+                    if (data.InternetService === 'Fiber optic') reasons.push("<li style='margin-bottom:8px;'><strong style='color:var(--text-main);'>Service Tier:</strong> Fiber Optic customers expect premium uptime. Schedule a free router diagnostic to ensure zero lag.</li>");
+                    if (data.TechSupport === 'No') reasons.push("<li style='margin-bottom:8px;'><strong style='color:var(--text-main);'>Support Gap:</strong> No Tech Support on file. Provide a complimentary 3-month trial of Premium Support to build reliance.</li>");
+                    if (parseFloat(data.MonthlyCharges) > 70) reasons.push("<li style='margin-bottom:8px;'><strong style='color:var(--text-main);'>Price Sensitivity:</strong> High monthly bill ($" + data.MonthlyCharges + "). Consider bundling their services to drop the perceived monthly rate.</li>");
+                    if (reasons.length === 0) reasons.push("<li style='margin-bottom:8px;'><strong style='color:var(--text-main);'>Proactive Outreach:</strong> Have an Account Manager schedule a check-in call to address hidden frustrations immediately.</li>");
+                    
+                    strategyHtml = `<ul style="margin-left: 20px; color: var(--text-muted);">${reasons.join("")}</ul>`;
+                    
+                    rCard.style.display = 'block';
+                    rCard.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+                    rCard.style.boxShadow = '0 10px 40px rgba(244, 63, 94, 0.1)';
+                    rHeader.style.color = 'var(--danger)';
+                    rHeader.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 8px; vertical-align: text-bottom;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Urgent Retention Playbook`;
+                } else {
+                    strategyHtml = `<p style="color: var(--text-muted);">Customer profile is stable. No intervention required. Proceed with standard lifecycle marketing.</p>`;
+                    rCard.style.display = 'block';
+                    rCard.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    rCard.style.boxShadow = '0 10px 40px rgba(16, 185, 129, 0.1)';
+                    rHeader.style.color = 'var(--success)';
+                    rHeader.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 8px; vertical-align: text-bottom;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Recommended Action`;
+                }
+                document.getElementById('retention-strategy').innerHTML = strategyHtml;
 
+                showToast("Prediction completed and logged successfully.");
+                fetchHistory(); fetchStats();
             } catch (err) {
-                alert("Error making prediction. Make sure the backend is running!");
-                console.error(err);
-            } finally {
-                btnText.style.display = 'block';
-                loader.style.display = 'none';
-            }
+                console.error(err); resultBox.classList.add('status-idle'); document.getElementById('result-prob').innerText = "--%"; document.getElementById('result-title').innerText = "System Error"; showToast("Failed to connect to Neural Engine.", true);
+            } finally { btnText.style.display = 'block'; loader.style.display = 'none'; }
         });
     </script>
 </body>
