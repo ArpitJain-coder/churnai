@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import pandas as pd
 import pickle
@@ -102,6 +103,16 @@ FEATURE_NAMES = [
     'PaymentMethod_Credit card (automatic)', 'PaymentMethod_Electronic check',
     'PaymentMethod_Mailed check'
 ]
+
+@app.get("/")
+async def serve_frontend():
+    import os
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    html_path = os.path.join(base_dir, 'index.html')
+    if not os.path.exists(html_path):
+        html_path = "index.html"
+    with open(html_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 @app.post("/api/predict")
 async def predict(data: CustomerData):
