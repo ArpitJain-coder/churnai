@@ -525,7 +525,7 @@
 
         async function fetchHistory() {
             try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : '/api/history';
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : 'https://churnai-7pco.onrender.com/api/history';
                 const res = await fetch(apiUrl);
                 const result = await res.json();
                 
@@ -557,7 +557,7 @@
         
         async function fetchStats() {
             try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/stats' : '/api/stats';
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/stats' : 'https://churnai-7pco.onrender.com/api/stats';
                 const res = await fetch(apiUrl);
                 if (res.ok) {
                     const data = await res.json();
@@ -587,7 +587,7 @@
 
         async function renderFullCustomerTable() {
             try {
-                const historyRes = await fetch(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : '/api/history');
+                const historyRes = await fetch(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/history' : 'https://churnai-7pco.onrender.com/api/history');
                 const result = await historyRes.json();
                 
                 const tbody = document.getElementById('full-customers-body');
@@ -613,7 +613,7 @@
         
         async function fetchFeatures() {
             try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/features' : '/api/features';
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/features' : 'https://churnai-7pco.onrender.com/api/features';
                 const res = await fetch(apiUrl);
                 if (res.ok) {
                     const result = await res.json();
@@ -677,7 +677,7 @@
             data.tenure = parseInt(data.tenure); data.MonthlyCharges = parseFloat(data.MonthlyCharges); data.TotalCharges = parseFloat(data.TotalCharges);
 
             try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/predict' : '/api/predict';
+                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8001/api/predict' : 'https://churnai-7pco.onrender.com/api/predict';
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if(!response.ok) throw new Error("Network response was not ok");
                 
